@@ -79,7 +79,9 @@ def parse_args_n_config():
     parser.add_argument("--batch-size", type=int, default=100, help="number of episodes to optimize at the same time")
     parser.add_argument("--buffer_size", type=int, default=int(1e6), help="buffer size")
     parser.add_argument("--malfunction", action="store_true", help="malfunction")
-    parser.add_argument("--mal_agent", type=int, default=0, help="malfunctioning agent")
+    parser.add_argument("--transfer", action="store_true", help="transfer")
+    parser.add_argument("--mal_agent_new", type=int, default=0, help="malfunctioning agent")
+    parser.add_argument("--mal_agent_old", type=int, default=0, help="malfunctioning agent")
     parser.add_argument("--reward_func", type=str, default="default", help="reward function")
     #Checkpointing
     # parser.add_argument("--save-rate", type=int, default=1000,
@@ -106,10 +108,16 @@ def parse_args_n_config():
     gamma = known_args.gamma if known_args.gamma else "0.95"
     reward_func = known_args.reward_func if known_args.reward_func else "default"
 
+
     if known_args.malfunction:
-        base_directory_path = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}malfunction/Agent_{known_args.mal_agent}/"
+        base_directory_path = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}malfunction/R2/agent_{known_args.mal_agent_old}/"
+        if known_args.transfer:
+            base_directory_path += f"agent_{known_args.mal_agent_new}malfunction{known_args.mal_agent_new}/"
     else:
-        base_directory_path = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/"
+        base_directory_path = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/R2/"
+        if known_args.transfer:
+            base_directory_path += f"agent_{known_args.mal_agent_new}/"
+    print(base_directory_path)
     if not os.path.exists(base_directory_path):
         os.makedirs(base_directory_path)
     directories = get_directories(base_directory_path)
@@ -120,9 +128,17 @@ def parse_args_n_config():
         print("No previous directories found")
         most_recent_directory = ""
     if known_args.malfunction:
-        plot_directory_path = f"./learning_curves/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/malfunction/Agent_{known_args.mal_agent}/" + mrd + "/"
+        plot_directory_path = f"./learning_curves/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/malfunction/agent_{known_args.mal_agent_old}/"
+        if known_args.transfer:
+            plot_directory_path += f"agent_{known_args.mal_agent_new}malfunction/" + mrd + "/"
+        else:
+            plot_directory_path += mrd + "/"
     else:
-        plot_directory_path = f"./learning_curves/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/R2/" + mrd + "/"
+        plot_directory_path = f"./learning_curves/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/R2/"
+        if known_args.transfer:
+            plot_directory_path += f"agent_{known_args.mal_agent_new}/" + mrd + "/"
+        else:
+            plot_directory_path += mrd + "/"
     print(plot_directory_path)
     # load_dir = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/"
 
@@ -282,6 +298,13 @@ def test(arglist, config):
             # print(cur_state[0].shape, cur_state_full.shape, env.state().shape)
 
             actions = [agent.action(obs) for agent, obs in zip(trainers,cur_state)]
+            if arglist.malfunction:
+                if arglist.transfer:
+                    actions[arglist.mal_agent_old] = actions[arglist.mal_agent_new]
+                    actions[arglist.mal_agent_new] = np.zeros_like(actions[arglist.mal_agent_new])
+                else:
+                    actions[arglist.mal_agent_old] = np.zeros_like(actions[arglist.mal_agent_old])
+
             # environment step
             actions_dict = {env.possible_agents[agent_id]: actions[agent_id] for agent_id in
                             range(len(env.possible_agents))}

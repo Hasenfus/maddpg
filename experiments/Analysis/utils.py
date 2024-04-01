@@ -141,41 +141,41 @@ def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, t
         plt.savefig(os.path.join(save_path, title + '.png'))
     plt.show()
 
-def plot_multiple_with_confidence_intervals(mean_values_list, confidence_intervals_list, timesteps, labels, title="Comparison Plot", xlabel="Timestep", ylabel="Value", save=False,
-                                            save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', ylim=None):
-    """
-    Plot multiple sets of mean values with their confidence intervals.
-
-    :param mean_values_list: List of arrays of mean values for each algorithm.
-    :param confidence_intervals_list: List of arrays of confidence intervals for each algorithm.
-    :param timesteps: Array of timesteps.
-    :param labels: List of labels for each algorithm.
-    :param title: Title of the plot.
-    :param xlabel: Label for the x-axis.
-    :param ylabel: Label for the y-axis.
-    """
-    plt.figure(figsize=(10, 6))
-
-    for mean_values, confidence_interval, label in zip(mean_values_list, confidence_intervals_list, labels):
-        upper_bound = mean_values + confidence_interval
-        lower_bound = mean_values - confidence_interval
-
-        plt.plot(timesteps, mean_values, label=f"Mean - {label}")
-        plt.fill_between(timesteps, lower_bound, upper_bound, alpha=0.2, label=f"95% CI - {label}")
-
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    if ylim:
-        plt.ylim(ylim)
-
-    plt.legend()
-    if save:
-        plt.savefig(os.path.join(save_path, title+'.png'))
-    plt.show()
-
+# def plot_multiple_with_confidence_intervals(mean_values_list, confidence_intervals_list, timesteps, labels, title="Comparison Plot", xlabel="Timestep", ylabel="Value", save=False,
+#                                             save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', ylim=None):
+#     """
+#     Plot multiple sets of mean values with their confidence intervals.
+#
+#     :param mean_values_list: List of arrays of mean values for each algorithm.
+#     :param confidence_intervals_list: List of arrays of confidence intervals for each algorithm.
+#     :param timesteps: Array of timesteps.
+#     :param labels: List of labels for each algorithm.
+#     :param title: Title of the plot.
+#     :param xlabel: Label for the x-axis.
+#     :param ylabel: Label for the y-axis.
+#     """
+#     plt.figure(figsize=(10, 6))
+#
+#     for mean_values, confidence_interval, label in zip(mean_values_list, confidence_intervals_list, labels):
+#         upper_bound = mean_values + confidence_interval
+#         lower_bound = mean_values - confidence_interval
+#
+#         plt.plot(timesteps, mean_values, label=f"Mean - {label}")
+#         plt.fill_between(timesteps, lower_bound, upper_bound, alpha=0.2, label=f"95% CI - {label}")
+#
+#     plt.title(title)
+#     plt.xlabel(xlabel)
+#     plt.ylabel(ylabel)
+#     if ylim:
+#         plt.ylim(ylim)
+#
+#     plt.legend()
+#     if save:
+#         plt.savefig(os.path.join(save_path, title+'.png'))
+#     plt.show()
+#
 def plot_trajectories(trajectories, title="Agent Trajectories", xlabel="X Position", ylabel="Y Position",
-                      save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots'):
+                      save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots',  xlim=None, ylim=None):
     """
     Plot a series of x, y pairs as trajectories on an xy-plane.
 
@@ -192,11 +192,102 @@ def plot_trajectories(trajectories, title="Agent Trajectories", xlabel="X Positi
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(True)
+
+    if xlim:
+        plt.xlim(xlim)
+    if ylim:
+        plt.ylim(ylim)
+
+    if save:
+        plt.savefig(os.path.join(save_path, title+'.png'))
+
+    plt.show()
+
+
+def smooth_data(data, smoothing_factor=0.0):
+    """
+    Apply simple moving average smoothing to the data.
+    :param data: Array of data points.
+    :param smoothing_factor: Between 0 (no smoothing) and 1 (maximum smoothing).
+    :return: Smoothed data.
+    """
+    if smoothing_factor <= 0:
+        return data  # No smoothing
+    window_size = int(len(data) * smoothing_factor) or 1
+    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+
+def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, title="Plot with Confidence Interval", xlabel="Timestep", ylabel="Value",
+                                  ylim=None, smoothing_factor=0.0, save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots'):
+    """
+    Plot mean values with confidence interval, with optional smoothing.
+
+    :param mean_values: Array of mean values.
+    :param confidence_interval: Array of confidence interval values.
+    :param timesteps: Array of timesteps.
+    :param title: Title of the plot.
+    :param xlabel: Label for the x-axis.
+    :param ylabel: Label for the y-axis.
+    :param smoothing_factor: Smoothing factor between 0 and 1.
+    """
+    smoothed_means = smooth_data(mean_values, smoothing_factor)
+    smoothed_ci = smooth_data(confidence_interval, smoothing_factor)
+
+    upper_bound = smoothed_means + smoothed_ci
+    lower_bound = smoothed_means - smoothed_ci
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps[-len(smoothed_means):], smoothed_means, label="Mean", color="blue")
+    plt.fill_between(timesteps[-len(smoothed_means):], lower_bound, upper_bound, color="blue", alpha=0.2, label="95% Confidence Interval")
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if ylim:
+        plt.ylim(ylim)
+
+    plt.legend()
+    if save:
+        plt.savefig(os.path.join(save_path, title + '.png'))
+    plt.show()
+def plot_multiple_with_confidence_intervals(mean_values_list, confidence_intervals_list, timesteps, labels, title="Comparison Plot", xlabel="Timestep", ylabel="Value",
+                                            save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', ylim=None, smoothing_factor=0.0):
+    """
+    Plot multiple sets of mean values with their confidence intervals, with optional smoothing.
+
+    :param mean_values_list: List of arrays of mean values for each algorithm.
+    :param confidence_intervals_list: List of arrays of confidence intervals for each algorithm.
+    :param timesteps: Array of timesteps.
+    :param labels: List of labels for each algorithm.
+    :param title: Title of the plot.
+    :param xlabel: Label for the x-axis.
+    :param ylabel: Label for the y-axis.
+    :param smoothing_factor: Smoothing factor between 0 and 1.
+    """
+    plt.figure(figsize=(10, 6))
+
+    for mean_values, confidence_interval, label in zip(mean_values_list, confidence_intervals_list, labels):
+        smoothed_means = smooth_data(mean_values, smoothing_factor)
+        smoothed_ci = smooth_data(confidence_interval, smoothing_factor)
+
+        upper_bound = smoothed_means + smoothed_ci
+        lower_bound = smoothed_means - smoothed_ci
+
+        plt.plot(timesteps[-len(smoothed_means):], smoothed_means, label=f"Mean - {label}")
+        plt.fill_between(timesteps[-len(smoothed_means):], lower_bound, upper_bound, alpha=0.2, label=f"95% CI - {label}")
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if ylim:
+        plt.ylim(ylim)
+
+    plt.legend()
     if save:
         plt.savefig(os.path.join(save_path, title+'.png'))
     plt.show()
 
-def get_trajectories_and_distances(base_path, healthy = True, mal = False, distances = True, date_format='%Y%m%d-%H%M%S'):
+
+def get_trajectories_and_distances(base_path, healthy = True, mal = False, distances = True, date_format='%Y%m%d-%H%M%S',):
     """Get the rewards for the last n runs."""
     directories = get_directories(base_path)
     date_directories = filter_and_sort_directories_by_date(directories, date_format)
@@ -263,14 +354,14 @@ def plot_distance_distribution(distances, interval_width, save=False,title='alg1
     plt.figure(figsize=(10, 6))
     plt.bar(labels, percentages, width=0.8, color='skyblue', edgecolor='black')
 
-    plt.title('Distribution of Distances')
+    plt.title(title)
     plt.xlabel('Distance Intervals')
     plt.ylabel('Percentage of Runs (%)')
 
     plt.xticks(rotation=45)  # Rotate labels to improve readability
     plt.grid(axis='y', linestyle='--')
-
-    plt.show()
     if save:
-        plt.savefig(os.path.join(save_path, 'distance_distribution.png'))
+        plt.savefig(os.path.join(save_path, title + 'distances.png'))
+    plt.show()
+
 
