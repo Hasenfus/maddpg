@@ -1,16 +1,40 @@
 #!/bin/bash
 
+commit_changes () {
+    learning_curve_path=$1
+    policy_path=$2
+    git add $learning_curve_path $policy_path
+    git commit -m "Updated models on $(date)"
+}
+
+
+train_model () {
+    config_path=$1
+    script=$2
+    data=$3
+    model=$4
+    iters=$5
+    for i in $(seq 1 $iters)
+    do
+      echo "Training run $i for configuration: $config_path"
+      /home/pearl0/miniconda3/envs/MMJC-maddpg/bin/python $script --config $config_path --train True
+    done
+    commit_changes $data $model
+    git push origin UNITYxMaMuJuCo
+}
 
 # Function to train a model with a given configuration
-bash ./Ant_mal_transfer.sh
-
-bash ./Ant_mal.sh
+#bash ./Ant_mal_transfer.sh
+#
+#bash ./Ant_mal.sh
 
 #bash ./Cheetah.sh
 
 
 # Training models with different configurations
-#train_model ./configs/ant_config_2.yaml ./train_mujuco.py ./learning_curves/Ant.4x2.0.001.350.0.99/ ./tmp/policy/Ant.4x2.0.001.350.0.99/
+train_model ./configs/ant_config_8.yaml Training/train_mujuco.py ./learning_curves/Ant.4x2.0.001.350.0.99/ ./tmp/policy/Ant.4x2.0.001.350.0.99/ 5
+train_model ./configs/ant_config_2.yaml Training/train_mujuco.py ./learning_curves/Ant.4x2.0.001.350.0.99/ ./tmp/policy/Ant.4x2.0.001.350.0.99/ 5
+
 #train_model ./configs/ant_config_4.yaml ./train_mujuco.py ./learning_curves/Ant.2x4.0.001.350.0.99/ ./tmp/policy/Ant.2x4.0.001.350.0.99/
 #
 ## Train malfunction

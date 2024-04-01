@@ -9,6 +9,7 @@ from maddpg.trainer.maddpg import MADDPGAgentTrainer
 import tensorflow.keras.layers as layers
 from datetime import datetime
 
+
 import yaml
 import os
 import shutil
@@ -165,9 +166,14 @@ def mlp_model_critic(input, num_outputs, scope, reuse=False, num_units=64, rnn_c
 def make_env(arglist, config, show=False):
     if config['domain']['name'] == 'Ant':
         if config['domain']['factorization'] == '8x1':
-            from gymnasium_robotics.mamujoco_v0 import get_parts_and_edges
+            unpartioned_nodes, edges, global_nodes = gymnasium_robotics.mamujoco_v0.get_parts_and_edges('Ant-v4', None)
+            partioned_nodes = [(unpartioned_nodes[0][0],), (unpartioned_nodes[0][1],), (unpartioned_nodes[0][2],),
+                               (unpartioned_nodes[0][3],), (unpartioned_nodes[0][4],), (unpartioned_nodes[0][5],),
+                               (unpartioned_nodes[0][6],), (unpartioned_nodes[0][7],)]
+            my_agent_factorization = {"partition": partioned_nodes, "edges": edges, "globals": global_nodes}
             env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'],
-                                                              agent_conf=config['domain']['factorization'],
+                                                              agent_conf='8x1',
+                                                              agent_factorization=my_agent_factorization,
                                                               healthy_reward=0.1,
                                                               max_episode_steps=config['domain']['max_episode_len'],
                                                               render_mode='rgb_array', terminate_when_unhealthy=False,
