@@ -110,36 +110,44 @@ def average_and_confidence(run_info):
 
 
 
-def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, title="Plot with Confidence Interval", xlabel="Timestep", ylabel="Value",
-                                  ylim = None, save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots'):
-    """
-    Plot mean values with confidence interval using matplotlib.
-
-    :param mean_values: Array of mean values.
-    :param confidence_interval: Array of confidence interval values.
-    :param timesteps: Array of timesteps.
-    :param title: Title of the plot.
-    :param xlabel: Label for the x-axis.
-    :param ylabel: Label for the y-axis.
-    """
-
-    upper_bound = mean_values + confidence_interval
-    lower_bound = mean_values - confidence_interval
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(timesteps, mean_values, label="Mean", color="blue")
-    plt.fill_between(timesteps, lower_bound, upper_bound, color="blue", alpha=0.2, label="95% Confidence Interval")
-
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    if ylim:
-        plt.ylim(ylim)
-
-    plt.legend()
-    if save:
-        plt.savefig(os.path.join(save_path, title + '.png'))
-    plt.show()
+# def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, title="Plot with Confidence Interval", xlabel="Timestep", ylabel="Value",
+#                                   ylim = None, save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots'):
+#     """
+#     Plot mean values with confidence interval using matplotlib.
+#
+#     :param mean_values: Array of mean values.
+#     :param confidence_interval: Array of confidence interval values.
+#     :param timesteps: Array of timesteps.
+#     :param title: Title of the plot.
+#     :param xlabel: Label for the x-axis.
+#     :param ylabel: Label for the y-axis.
+#     """
+#
+#     upper_bound = mean_values + confidence_interval
+#     lower_bound = mean_values - confidence_interval
+#
+#     plt.figure(figsize=(4, 3))
+#     plt.rcParams.update({
+#         'font.size': 12,
+#         'lines.linewidth': 2,
+#         'axes.labelsize': 12,  # Axis label size
+#         'axes.titlesize': 14,  # Title size
+#         'figure.autolayout': True,  # Enable automatic layout adjustment
+#     })
+#
+#     plt.plot(timesteps, mean_values, label="Mean", color="blue")
+#     plt.fill_between(timesteps, lower_bound, upper_bound, color="blue", alpha=0.2, label="95% Confidence Interval")
+#
+#     plt.title(title)
+#     plt.xlabel(xlabel)
+#     plt.ylabel(ylabel)
+#     if ylim:
+#         plt.ylim(ylim)
+#
+#     plt.legend()
+#     if save:
+#         plt.savefig(os.path.join(save_path, title + '.png'), dpi=300)
+#     plt.show()
 
 # def plot_multiple_with_confidence_intervals(mean_values_list, confidence_intervals_list, timesteps, labels, title="Comparison Plot", xlabel="Timestep", ylabel="Value", save=False,
 #                                             save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', ylim=None):
@@ -175,32 +183,56 @@ def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, t
 #     plt.show()
 #
 def plot_trajectories(trajectories, title="Agent Trajectories", xlabel="X Position", ylabel="Y Position",
-                      save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots',  xlim=None, ylim=None):
+                      save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots',  xlim=None, ylim=None, show_title= True):
     """
     Plot a series of x, y pairs as trajectories on an xy-plane.
 
     :param trajectories: A list of trajectories, where each trajectory is a list of (x, y) pairs.
     """
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(4, 3))
 
+    # Setting the plot's rcParams
+    plt.rcParams.update({
+        'font.size': 12,
+        'lines.linewidth': 2,
+        'axes.labelsize': 12,  # Axis label size
+        'axes.titlesize': 14,  # Title size
+        'figure.autolayout': True,  # Enable automatic layout adjustment
+    })
+
+    # Plotting each trajectory
     for i, traj in enumerate(trajectories):
         # Assuming each trajectory is a list of (x, y) tuples
         x_coords, y_coords = zip(*traj)
-        plt.plot(x_coords, y_coords, 'r-')
+        ax.plot(x_coords, y_coords, 'r-')
 
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.grid(True)
+    # Setting titles and labels
+    if show_title:
+        ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
+    # Adding grid
+    ax.grid(True)
+
+    # Remove top and right spines to get rid of the bounding box
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    # Optionally, make left and bottom spines less obtrusive
+    ax.spines['left'].set_color('gray')
+    ax.spines['bottom'].set_color('gray')
+
+    # Adjusting plot limits if specified
     if xlim:
-        plt.xlim(xlim)
+        ax.set_xlim(xlim)
     if ylim:
-        plt.ylim(ylim)
+        ax.set_ylim(ylim)
 
+    # Save the figure if 'save' is True
     if save:
-        plt.savefig(os.path.join(save_path, title+'.png'))
+        fig.savefig(os.path.join(save_path, title + '.png'), dpi=300)
 
+    # Show the plot
     plt.show()
 
 
@@ -217,7 +249,7 @@ def smooth_data(data, smoothing_factor=0.0):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
 def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, title="Plot with Confidence Interval", xlabel="Timestep", ylabel="Value",
-                                  ylim=None, smoothing_factor=0.0, save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots'):
+                                  ylim=None, smoothing_factor=0.0, save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', legend=True, show_title=True):
     """
     Plot mean values with confidence interval, with optional smoothing.
 
@@ -235,22 +267,54 @@ def plot_with_confidence_interval(mean_values, confidence_interval, timesteps, t
     upper_bound = smoothed_means + smoothed_ci
     lower_bound = smoothed_means - smoothed_ci
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(timesteps[-len(smoothed_means):], smoothed_means, label="Mean", color="blue")
-    plt.fill_between(timesteps[-len(smoothed_means):], lower_bound, upper_bound, color="blue", alpha=0.2, label="95% Confidence Interval")
+    fig, ax = plt.subplots(figsize=(4, 3))
 
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    # Remove top and right spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Make left and bottom spines darker
+    ax.spines['left'].set_color('black')  # You can specify a hex code for colors as well, e.g., '#000000'
+    ax.spines['left'].set_linewidth(1.5)
+    ax.spines['bottom'].set_color('black')
+    ax.spines['bottom'].set_linewidth(1.5)
+
+    # Add grid behind the plot
+    ax.grid(True, color='grey', linestyle='--', linewidth=0.5, alpha=0.5)
+    # Send grid to the back
+    ax.set_axisbelow(True)
+
+    # Update the rcParams for this figure specifically
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.xaxis.label.set_size(12)
+    ax.yaxis.label.set_size(12)
+    ax.title.set_size(14)
+
+    # Plot data
+    ax.plot(timesteps[-len(smoothed_means):], smoothed_means, label="Mean", color="blue")
+    ax.fill_between(timesteps[-len(smoothed_means):], lower_bound, upper_bound, color="blue", alpha=0.2,
+                    label="95% Confidence Interval")
+
+    # Setting titles and labels
+    if show_title:
+        ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     if ylim:
-        plt.ylim(ylim)
+        ax.set_ylim(ylim)
 
-    plt.legend()
+    # Display legend
+    if legend:
+        ax.legend()
+
+    # Save the figure if required
     if save:
-        plt.savefig(os.path.join(save_path, title + '.png'))
+        fig.savefig(os.path.join(save_path, title + '.png'), dpi=300)
+
+    # Show the plot
     plt.show()
 def plot_multiple_with_confidence_intervals(mean_values_list, confidence_intervals_list, timesteps, labels, title="Comparison Plot", xlabel="Timestep", ylabel="Value",
-                                            save=False, save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', ylim=None, smoothing_factor=0.0):
+                                            save=False, legend = True,  save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', ylim=None, smoothing_factor=0.0, show_title=True):
     """
     Plot multiple sets of mean values with their confidence intervals, with optional smoothing.
 
@@ -263,8 +327,38 @@ def plot_multiple_with_confidence_intervals(mean_values_list, confidence_interva
     :param ylabel: Label for the y-axis.
     :param smoothing_factor: Smoothing factor between 0 and 1.
     """
-    plt.figure(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(4, 3))
 
+    # Update the rcParams for this figure specifically
+    plt.rcParams.update({
+        'font.size': 12,
+        'lines.linewidth': 2,
+        'axes.labelsize': 12,  # Axis label size
+        'axes.titlesize': 14,  # Title size
+        'figure.autolayout': True,  # Enable automatic layout adjustment
+    })
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Make left and bottom spines darker
+    ax.spines['left'].set_color('black')  # You can specify a hex code for colors as well, e.g., '#000000'
+    ax.spines['left'].set_linewidth(1.5)
+    ax.spines['bottom'].set_color('black')
+    ax.spines['bottom'].set_linewidth(1.5)
+
+    # Add grid behind the plot
+    ax.grid(True, color='grey', linestyle='--', linewidth=0.5, alpha=0.5)
+    # Send grid to the back
+    ax.set_axisbelow(True)
+
+    # Update the rcParams for this figure specifically
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.xaxis.label.set_size(12)
+    ax.yaxis.label.set_size(12)
+    ax.title.set_size(14)
+
+    # Plotting mean values with confidence intervals
     for mean_values, confidence_interval, label in zip(mean_values_list, confidence_intervals_list, labels):
         smoothed_means = smooth_data(mean_values, smoothing_factor)
         smoothed_ci = smooth_data(confidence_interval, smoothing_factor)
@@ -272,18 +366,29 @@ def plot_multiple_with_confidence_intervals(mean_values_list, confidence_interva
         upper_bound = smoothed_means + smoothed_ci
         lower_bound = smoothed_means - smoothed_ci
 
-        plt.plot(timesteps[-len(smoothed_means):], smoothed_means, label=f"Mean - {label}")
-        plt.fill_between(timesteps[-len(smoothed_means):], lower_bound, upper_bound, alpha=0.2, label=f"95% CI - {label}")
+        ax.plot(timesteps[-len(smoothed_means):], smoothed_means, label=f"Mean - {label}")
+        ax.fill_between(timesteps[-len(smoothed_means):], lower_bound, upper_bound, alpha=0.2,
+                        label=f"95% CI - {label}")
 
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    # Setting titles and labels
+    if show_title:
+        ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    # Adjusting plot limits if specified
     if ylim:
-        plt.ylim(ylim)
+        ax.set_ylim(ylim)
 
-    plt.legend()
+    # Adding legend if specified
+    if legend:
+        ax.legend()
+
+    # Save the figure if 'save' is True
     if save:
-        plt.savefig(os.path.join(save_path, title+'.png'))
+        fig.savefig(os.path.join(save_path, title + '.png'), dpi=300)
+
+    # Show the plot
     plt.show()
 
 
@@ -327,7 +432,7 @@ def get_trajectories_and_distances(base_path, healthy = True, mal = False, dista
     return returnable
 
 
-def plot_distance_distribution(distances, interval_width, save=False,title='alg1', save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots'):
+def plot_distance_distribution(distances, interval_width, save=False,title='alg1', save_path='/Users/Hunter/Development/Academic/UML/RL/Hasenfus-RL/Multi-Agent/maddpg/experiments/plots', show_title=True):
     """
     Plot the distribution of distances as a bar graph with specified interval widths.
 
@@ -351,17 +456,227 @@ def plot_distance_distribution(distances, interval_width, save=False,title='alg1
     labels = [f'{int(bins[i])}-{int(bins[i + 1])}' for i in range(len(bins) - 1)]
 
     # Plotting
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(4, 3))
+
+    plt.rcParams.update({
+        'font.size': 12,
+        'lines.linewidth': 2,
+        'axes.labelsize': 12,  # Axis label size
+        'axes.titlesize': 14,  # Title size
+        'figure.autolayout': True,  # Enable automatic layout adjustment
+    })
+
     plt.bar(labels, percentages, width=0.8, color='skyblue', edgecolor='black')
 
-    plt.title(title)
+    if show_title:
+        plt.title(title)
     plt.xlabel('Distance Intervals')
     plt.ylabel('Percentage of Runs (%)')
 
     plt.xticks(rotation=45)  # Rotate labels to improve readability
     plt.grid(axis='y', linestyle='--')
     if save:
-        plt.savefig(os.path.join(save_path, title + 'distances.png'))
+        plt.savefig(os.path.join(save_path, title + 'distances.png'), dpi=300)
     plt.show()
 
 
+
+def get_reward_function_breakdown(base_path, date_format='%Y%m%d-%H%M%S',):
+    """Get the rewards for the last n runs."""
+    directories = get_directories(base_path)
+    date_directories = filter_and_sort_directories_by_date(directories, date_format)
+
+    # recent_directory = date_directories[-1]
+    #
+    # full_path = os.path.join(base_path, recent_directory)
+    # print(full_path)
+    directories2 = get_directories(base_path)
+    # print(directories2)
+    date_directories2 = filter_and_sort_directories_by_date(directories2, date_format)
+    # print(date_directories2)
+    recent_directory2 = date_directories2[-1]
+
+    full_path2 = os.path.join(base_path, recent_directory2)
+
+    returnable = []
+    with open(os.path.join(full_path2, 'test_healthy_rewards.pkl'), 'rb') as f:
+        healthy_trajectories = pickle.load(f)
+        returnable.append(healthy_trajectories)
+
+    with open(os.path.join(full_path2, 'test_reward_ctrl.pkl'), 'rb') as f:
+        mal_trajectories = pickle.load(f)
+        returnable.append(mal_trajectories)
+
+    with open(os.path.join(full_path2, 'test_reward_forward.pkl'), 'rb') as f:
+        mal_trajectories = pickle.load(f)
+        returnable.append(mal_trajectories)
+
+    with open(os.path.join(full_path2, 'test_reward_survive.pkl'), 'rb') as f:
+        mal_trajectories = pickle.load(f)
+        returnable.append(mal_trajectories)
+
+
+
+    return returnable
+
+def stacked_bar_graph(*tuples, bar_labels=None, array_labels=None, title="Stacked Bar Graph of Array Averages",
+                      legend_size=(2, 2), legend_aspect='auto', colors=None):
+    averages = []
+
+    assert len(tuples[0]) == len(array_labels)
+
+    # Compute averages for each array in the tuples
+    for i, arrays in enumerate(tuples):
+        tuple_averages = []
+        for arr in arrays:
+            avg = np.mean(arr)
+            tuple_averages.append(avg)
+        averages.append(tuple_averages)
+
+    # Set up the plot
+    fig, ax = plt.subplots()
+    bar_width = 0.8 / len(tuples)
+    x = np.arange(len(tuples))
+
+    # Create stacked bars for each tuple
+    bottom_pos = np.zeros(len(tuples))
+    bottom_neg = np.zeros(len(tuples))
+    for i in range(len(averages[0])):
+        values = [tuple_averages[i] for tuple_averages in averages]
+        pos_mask = [val >= 0 for val in values]
+        neg_mask = [val < 0 for val in values]
+
+        # Plot positive rewards above the x-axis
+        ax.bar(x[pos_mask], [val for val, mask in zip(values, pos_mask) if mask],
+               bar_width, bottom=bottom_pos[pos_mask], label=array_labels[i] + " (Positive)",
+               color=colors[i % len(colors)] if colors else None)
+
+        # Plot negative rewards below the x-axis
+        ax.bar(x[neg_mask], [val for val, mask in zip(values, neg_mask) if mask],
+               bar_width, bottom=bottom_neg[neg_mask], label=array_labels[i] + " (Negative)",
+               color=colors[i % len(colors)] if colors else None)
+
+        # Display the average value on top of each stacked segment
+        for j, value in enumerate(values):
+            if value >= 0:
+                ax.text(x[j], bottom_pos[j] + value/2, f"{value:.2f}", ha='center', va='bottom', fontsize=8,
+                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
+            else:
+                ax.text(x[j], bottom_neg[j] + value/2, f"{value:.2f}", ha='center', va='top', fontsize=8,
+                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.7))
+
+        bottom_pos += [val if mask else 0 for val, mask in zip(values, pos_mask)]
+        bottom_neg += [val if mask else 0 for val, mask in zip(values, neg_mask)]
+
+    # Set the x-axis labels for each reward bar
+    if bar_labels is not None:
+        ax.set_xticks(x)
+        ax.set_xticklabels(bar_labels)
+
+    # Customize the plot
+    ax.axhline(0, color='black', linewidth=0.8)  # Add a horizontal line at y=0
+    ax.set_ylabel("Reward Value")
+    ax.set_title(title)
+
+    # Create a separate legend
+    legend_fig, legend_ax = plt.subplots(figsize=legend_size)
+    legend_ax.legend(*ax.get_legend_handles_labels(), loc='center', ncol=1, frameon=False)
+    legend_ax.axis('off')
+    legend_fig.subplots_adjust(top=0.5)
+    legend_fig.suptitle("Array Labels", y=0.85)
+    legend_fig.savefig("legend.png", bbox_inches='tight', pad_inches=0.1)
+
+    # Remove the legend from the main plot
+    ax.get_legend().remove()
+
+    # Display the plot
+    plt.tight_layout()
+    plt.show()
+
+
+
+def plot_trajectory_and_distribution(data_sets, interval_width, labels, colors, title="Agent Analysis",
+                                     save=False, save_path='.', show_title=True, xlim=None, ylim=None):
+    """
+    Plot trajectories and distance distributions for multiple datasets in separate subplots.
+
+    :param data_sets: A list of tuples, where each tuple contains (trajectories, distances) for a dataset.
+    :param interval_width: The width of each interval for the distance distribution plot.
+    :param labels: A list of labels for each dataset.
+    :param colors: A list of colors for each dataset.
+    :param title: The title of the plot.
+    :param save: Whether to save the plot and legend as image files.
+    :param save_path: The path to save the plot and legend images.
+    :param show_title: Whether to display the title on the plot.
+    """
+
+    num_datasets = len(data_sets)
+    # fig, axes = plt.subplots(num_datasets, 2, figsize=(8, num_datasets * 4))
+    fig, axes = plt.subplots(2, num_datasets,figsize=(num_datasets * 4, num_datasets * 3))
+
+
+    # Setting the plot's rcParams
+    plt.rcParams.update({
+        'font.size': 12,
+        'lines.linewidth': 2,
+        'axes.labelsize': 12,  # Axis label size
+        'axes.titlesize': 14,  # Title size
+        'figure.autolayout': True,  # Enable automatic layout adjustment
+    })
+
+    # Plotting trajectories and distance distributions for each dataset
+    for i, (trajectories, distances) in enumerate(data_sets):
+        color = colors[i]
+        label = labels[i]
+
+        # Plotting trajectories
+        ax1 = axes[0,i]
+        for traj in trajectories:
+            x_coords, y_coords = zip(*traj)
+            ax1.plot(x_coords, y_coords, color=color, label=label)
+        ax1.set_xlabel("X Position")
+        ax1.set_ylabel("Y Position")
+        # ax1.set_title(f"Trajectory - {label}")
+        ax1.grid(True)
+        ax1.spines['top'].set_visible(False)
+        ax1.spines['right'].set_visible(False)
+
+        if xlim:
+            ax1.set_xlim(xlim)
+        if ylim:
+            ax1.set_ylim(ylim)
+
+        # Plotting distance distribution
+        ax2 = axes[1, i]
+        min_distance = np.min(distances)
+        max_distance = np.max(distances)
+        bins = np.arange(min_distance, max_distance + interval_width, interval_width)
+        counts, _ = np.histogram(distances, bins=bins)
+        percentages = (counts / counts.sum()) * 100
+        bar_labels = [f'{int(bins[i])}-{int(bins[i + 1])}' for i in range(len(bins) - 1)]
+        ax2.bar(bar_labels, percentages, width=0.8, color=color, edgecolor='black', label=label)
+        ax2.set_xlabel("Distance Intervals")
+        ax2.set_ylabel("Percentage of Runs (%)")
+        # ax2.set_title(f"Distance Distribution - {label}")
+        ax2.set_xticklabels(bar_labels, rotation=45)
+        ax2.grid(axis='y', linestyle='--')
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_visible(False)
+
+    # Save the plot if 'save' is True
+    if save:
+        fig.savefig(os.path.join(save_path, title + '.png'), dpi=300, bbox_inches='tight')
+
+    # Creating and saving legend separately
+    legend_fig, legend_ax = plt.subplots(figsize=(3, len(labels) * 0.3))
+    legend_handles = [plt.Line2D([0], [0], color=color, lw=2) for color in colors]
+    legend_ax.legend(legend_handles, labels, loc='center left', frameon=False)
+    legend_ax.axis('off')
+    if save:
+        legend_fig.savefig(os.path.join(save_path, title + '_legend.png'), dpi=300, bbox_inches='tight')
+
+    # Show the plot
+    plt.tight_layout()
+    if show_title:
+        fig.suptitle(title)
+    plt.show()

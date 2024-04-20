@@ -82,7 +82,7 @@ def parse_args_n_config():
     parser.add_argument("--transfer", action="store_true", help="transfer")
     parser.add_argument("--mal_agent_new", type=int, default=0, help="malfunctioning agent")
     parser.add_argument("--mal_agent_old", type=int, default=0, help="malfunctioning agent")
-    parser.add_argument("--reward_func", type=str, default="default", help="reward function")
+    parser.add_argument("--reward_func", type=str, default="R2", help="reward function")
     #Checkpointing
     # parser.add_argument("--save-rate", type=int, default=1000,
     #                     help="save model once every time this many episodes are completed")
@@ -116,7 +116,7 @@ def parse_args_n_config():
     else:
         base_directory_path = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/R2/"
         if known_args.transfer:
-            base_directory_path += f"agent_{known_args.mal_agent_new}/"
+            base_directory_path += f"agent_{known_args.mal_agent_new}malfunction{known_args.mal_agent_new}/"
     print(base_directory_path)
     if not os.path.exists(base_directory_path):
         os.makedirs(base_directory_path)
@@ -130,15 +130,15 @@ def parse_args_n_config():
     if known_args.malfunction:
         plot_directory_path = f"./learning_curves/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/malfunction/agent_{known_args.mal_agent_old}/"
         if known_args.transfer:
-            plot_directory_path += f"agent_{known_args.mal_agent_new}malfunction/" + mrd + "/"
+            plot_directory_path += f"agent_{known_args.mal_agent_new}malfunction/" + mrd + "/" + reward_func + "/"
         else:
-            plot_directory_path += mrd + "/"
+            plot_directory_path += mrd + "/" + reward_func + "/"
     else:
         plot_directory_path = f"./learning_curves/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/R2/"
         if known_args.transfer:
-            plot_directory_path += f"agent_{known_args.mal_agent_new}/" + mrd + "/"
+            plot_directory_path += f"agent_{known_args.mal_agent_new}malfunction{known_args.mal_agent_new}/" + mrd + "/" + reward_func + "/"
         else:
-            plot_directory_path += mrd + "/"
+            plot_directory_path += mrd + "/" + reward_func + "/"
     print(plot_directory_path)
     # load_dir = f"./tmp/policy/{scenario}.{adjugate}.{lr}.{numunits}.{gamma}/"
 
@@ -195,18 +195,38 @@ def mlp_model_critic(input, num_outputs, scope, reuse=False, num_units=64, rnn_c
 def make_env(arglist, config, show=False):
     if show:
         if config['domain']['name'] == 'Ant':
-            env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'], agent_conf=config['domain']['factorization'],healthy_reward=0.1,
-                                     max_episode_steps=config['domain']['max_episode_len'],
-                                           agent_obsk=config['domain']['obsk'], render_mode='human', terminate_when_unhealthy=False)
+            if arglist.reward_func == 'R2':
+                # print("Using reward function R2")
+                env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'],
+                                                                  agent_conf=config['domain']['factorization'],
+                                                                  healthy_reward=0.1,
+                                                                  max_episode_steps=config['domain']['max_episode_len'],
+                                                                  agent_obsk=config['domain']['obsk'],
+                                                                  terminate_when_unhealthy=False,
+                                                                  use_contact_forces=False, render_mode='human')
+            if arglist.reward_func == 'R3':
+                # print("Using reward function R3")
+                env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'],
+                                                                  agent_conf=config['domain']['factorization'],
+                                                                  max_episode_steps=config['domain']['max_episode_len'],
+                                                                  agent_obsk=config['domain']['obsk'],
+                                                                  use_contact_forces=True, render_mode='human')
         else:
             env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'], agent_conf=config['domain']['factorization'],
-                                           agent_obsk=config['domain']['obsk'], render_mode='human')
+                                           agent_obsk=config['domain']['obsk'], render_mode='human', use_contact_forces = True)
                                            # include_cfrc_ext_in_observation=False)
     else:
         if config['domain']['name'] == 'Ant':
-            env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'], agent_conf=config['domain']['factorization'],healthy_reward=0.1,
-                                     max_episode_steps=config['domain']['max_episode_len'],
-                                           agent_obsk=config['domain']['obsk'], terminate_when_unhealthy=False)
+            if arglist.reward_func == 'R2':
+                # print("Using reward function R2")
+                env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'], agent_conf=config['domain']['factorization'],healthy_reward=0.1,
+                                         max_episode_steps=config['domain']['max_episode_len'],
+                                               agent_obsk=config['domain']['obsk'], terminate_when_unhealthy=False, use_contact_forces = False)
+            if arglist.reward_func == 'R3':
+                # print("Using reward function R3")
+                env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'], agent_conf=config['domain']['factorization'],
+                                         max_episode_steps=config['domain']['max_episode_len'],
+                                               agent_obsk=config['domain']['obsk'], use_contact_forces = True)
         else:
             env = gymnasium_robotics.mamujoco_v0.parallel_env(scenario=config['domain']['name'], agent_conf=config['domain']['factorization'],
                                            agent_obsk=config['domain']['obsk'])
@@ -268,6 +288,15 @@ def test(arglist, config):
         final_ep_ag_rewards = []  # agent rewards for training curve
         trajectory = []
         time_steps = []
+
+        reward_forward_all = []
+        reward_ctrl_all = []
+        reward_survive_all = []
+        reward_forward = 0.0
+        reward_ctrl = 0.0
+        reward_survive = 0.0
+
+
         validation_success = []
         agent_info = [[[]]]  # placeholder for benchmarking info
         saver = tf.train.Saver()
@@ -304,6 +333,10 @@ def test(arglist, config):
                     actions[arglist.mal_agent_new] = np.zeros_like(actions[arglist.mal_agent_new])
                 else:
                     actions[arglist.mal_agent_old] = np.zeros_like(actions[arglist.mal_agent_old])
+            if arglist.mal_agent_old == -1 and arglist.transfer:
+                actions[arglist.mal_agent_new] = np.zeros_like(actions[arglist.mal_agent_new])
+
+
 
             # environment step
             actions_dict = {env.possible_agents[agent_id]: actions[agent_id] for agent_id in
@@ -316,6 +349,12 @@ def test(arglist, config):
             new_state_dict, reward_dict, is_terminal_dict, is_truncated_dict, info_dict = env.step(actions_dict_numpy)
             next_state = [np.array(state, dtype=np.float32) for state in new_state_dict.values()]
             trajectory.append((info_dict['agent_0']['x_position'], info_dict['agent_0']['y_position']))
+            # print(info_dict)
+
+            reward_forward += info_dict['agent_0']['reward_forward']
+            reward_ctrl += info_dict['agent_0']['reward_ctrl']
+            reward_survive += info_dict['agent_0']['reward_survive']
+
 
             terminal = (episode_step >= arglist.max_episode_len)
 
@@ -334,7 +373,7 @@ def test(arglist, config):
             # update cur_state
             # obs_n = new_obs_n
             # new_state = [torch.tensor(state, dtype=torch.float32, device=TORCH_DEVICE) for state in
-            #              new_state_dict.values()]
+            #              new_state_dict.vaFlues()]
             new_state = [np.array(state, dtype=np.float32) for state in new_state_dict.values()]
             cur_state = new_state
 
@@ -360,11 +399,18 @@ def test(arglist, config):
                 cur_state_dict = env.reset()[0]
                 cur_state = [np.array(state, dtype=np.float32) for state in cur_state_dict.values()]
                 episode_step = 0
+
                 episode_rewards.append(0)
                 all_trajectories.append(trajectory)
                 all_last_x.append(info_dict['agent_0']['x_position'])
                 all_last_xy.append((info_dict['agent_0']['x_position'], info_dict['agent_0']['y_position']))
                 all_tot_dist.append(info_dict['agent_0']['distance_from_origin'])
+                reward_forward_all.append(reward_forward)
+                reward_ctrl_all.append(reward_ctrl)
+                reward_survive_all.append(reward_survive)
+                reward_forward = 0.0
+                reward_ctrl = 0.0
+                reward_survive = 0.0
                 trajectory = []
                 for a in agent_rewards:
                     a.append(0)
@@ -435,6 +481,23 @@ def test(arglist, config):
                                           config['maddpg']['exp_name'] + '_healthy_distances.pkl')
     with open(distances_file_name, 'wb') as fp:
         pickle.dump(all_tot_dist, fp)
+
+    last_x_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_healthy_last_x.pkl')
+    with open(last_x_file_name, 'wb') as fp:
+        pickle.dump(all_last_x, fp)
+    last_xy_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_healthy_last_xy.pkl')
+    with open(last_xy_file_name, 'wb') as fp:
+        pickle.dump(all_last_xy, fp)
+    reward_forward_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_reward_forward.pkl')
+    with open(reward_forward_file_name, 'wb') as fp:
+        pickle.dump(reward_forward_all, fp)
+    reward_ctrl_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_reward_ctrl.pkl')
+    with open(reward_ctrl_file_name, 'wb') as fp:
+        pickle.dump(reward_ctrl_all, fp)
+    reward_survive_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_reward_survive.pkl')
+    with open(reward_survive_file_name, 'wb') as fp:
+        pickle.dump(reward_survive_all, fp)
+
     # agrew_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_agrewards.pkl')
     # with open(agrew_file_name, 'wb') as fp:
     #     pickle.dump(all_ag_runs, fp)
