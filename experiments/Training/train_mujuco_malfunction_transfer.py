@@ -244,12 +244,12 @@ def train(arglist, config):
         tot_steps = 0
         mal_agent_prev = arglist.mal_agent_prev
         mal_agent_new = arglist.mal_agent_new
-        if mal_agent_prev == -1 and mal_agent_new == 1:
-            mal_agent_prev = 0
-            mal_agent_new = 1
-        if mal_agent_prev == -1 and mal_agent_new == 3:
-            mal_agent_prev = 2
-            mal_agent_new = 3
+        # if mal_agent_prev == -1 and mal_agent_new == 1:
+        #     mal_agent_prev = 0
+        #     mal_agent_new = 1
+        # if mal_agent_prev == -1 and mal_agent_new == 3:
+        #     mal_agent_prev = 2
+        #     mal_agent_new = 3
 
         print(str(config['domain']['name']))
         print('Starting iterations...')
@@ -270,8 +270,8 @@ def train(arglist, config):
             actions = []
 
             for agent, obs in zip(trainers, cur_state):
-                if agent.agent_index == mal_agent_prev:
-                    actions.append(agent.action(cur_state[mal_agent_new]))
+                if agent.agent_index == mal_agent_prev and mal_agent_prev != -1:
+                    actions.append(trainers[mal_agent_new].action(obs))
                 else:
                     actions.append(agent.action(obs))
 

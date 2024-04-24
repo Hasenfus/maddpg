@@ -292,9 +292,20 @@ def test(arglist, config):
         reward_forward_all = []
         reward_ctrl_all = []
         reward_survive_all = []
+        reward_contact_all = []
         reward_forward = 0.0
         reward_ctrl = 0.0
         reward_survive = 0.0
+        reward_contact = 0.0
+
+        mal_agent_prev = arglist.mal_agent_old
+        mal_agent_new = arglist.mal_agent_new
+        if mal_agent_prev == -1 and mal_agent_new == 1:
+            mal_agent_prev = 0
+            mal_agent_new = 1
+        if mal_agent_prev == -1 and mal_agent_new == 3:
+            mal_agent_prev = 2
+            mal_agent_new = 3
 
 
         validation_success = []
@@ -327,14 +338,16 @@ def test(arglist, config):
             # print(cur_state[0].shape, cur_state_full.shape, env.state().shape)
 
             actions = [agent.action(obs) for agent, obs in zip(trainers,cur_state)]
+
             if arglist.malfunction:
                 if arglist.transfer:
-                    actions[arglist.mal_agent_old] = actions[arglist.mal_agent_new]
-                    actions[arglist.mal_agent_new] = np.zeros_like(actions[arglist.mal_agent_new])
+                    actions[mal_agent_prev] =trainers[mal_agent_new].action(cur_state[mal_agent_prev])
+                    actions[mal_agent_new] = np.zeros_like(actions[mal_agent_new])
                 else:
-                    actions[arglist.mal_agent_old] = np.zeros_like(actions[arglist.mal_agent_old])
-            if arglist.mal_agent_old == -1 and arglist.transfer:
-                actions[arglist.mal_agent_new] = np.zeros_like(actions[arglist.mal_agent_new])
+                    actions[mal_agent_prev] = np.zeros_like(actions[mal_agent_prev])
+            if mal_agent_prev == -1 and arglist.transfer:
+
+                actions[arglist.mal_agent_new] = np.zeros_like(actions[mal_agent_new])
 
 
 
@@ -354,6 +367,7 @@ def test(arglist, config):
             reward_forward += info_dict['agent_0']['reward_forward']
             reward_ctrl += info_dict['agent_0']['reward_ctrl']
             reward_survive += info_dict['agent_0']['reward_survive']
+            reward_contact += info_dict['agent_0']['reward_contact']
 
 
             terminal = (episode_step >= arglist.max_episode_len)
@@ -408,6 +422,7 @@ def test(arglist, config):
                 reward_forward_all.append(reward_forward)
                 reward_ctrl_all.append(reward_ctrl)
                 reward_survive_all.append(reward_survive)
+                reward_contact_all.append(reward_contact)
                 reward_forward = 0.0
                 reward_ctrl = 0.0
                 reward_survive = 0.0
@@ -498,6 +513,9 @@ def test(arglist, config):
     with open(reward_survive_file_name, 'wb') as fp:
         pickle.dump(reward_survive_all, fp)
 
+    reward_contact_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_reward_contact.pkl')
+    with open(reward_contact_file_name, 'wb') as fp:
+        pickle.dump(reward_contact_all, fp)
     # agrew_file_name = os.path.join(full_directory_path, config['maddpg']['exp_name'] + '_agrewards.pkl')
     # with open(agrew_file_name, 'wb') as fp:
     #     pickle.dump(all_ag_runs, fp)
