@@ -20,7 +20,7 @@ train_model () {
     for i in $(seq 1 $iters)
     do
       echo "Training run $i for configuration: $config_path"
-      /Users/Hunter/opt/anaconda3/envs/MaMJC-maddpg/bin/python $script --config $config_path --train True --mal_agent_prev $agent1 --mal_agent_new $agent2
+      /home/pearl0/miniconda3/envs/MMJC-maddpg/bin/python $script --config $config_path --train True --mal_agent_prev $agent1 --mal_agent_new $agent2
     done
     commit_changes $data $model
     git push origin UNITYxMaMuJuCo
