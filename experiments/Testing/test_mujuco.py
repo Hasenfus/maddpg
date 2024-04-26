@@ -300,12 +300,12 @@ def test(arglist, config):
 
         mal_agent_prev = arglist.mal_agent_old
         mal_agent_new = arglist.mal_agent_new
-        if mal_agent_prev == -1 and mal_agent_new == 1:
-            mal_agent_prev = 0
-            mal_agent_new = 1
-        if mal_agent_prev == -1 and mal_agent_new == 3:
-            mal_agent_prev = 2
-            mal_agent_new = 3
+        # if mal_agent_prev == -1 and mal_agent_new == 1:
+        #     mal_agent_prev = 0
+        #     mal_agent_new = 1
+        # if mal_agent_prev == -1 and mal_agent_new == 3:
+        #     mal_agent_prev = 2
+        #     mal_agent_new = 3
 
 
         validation_success = []
@@ -339,16 +339,13 @@ def test(arglist, config):
 
             actions = [agent.action(obs) for agent, obs in zip(trainers,cur_state)]
 
-            if arglist.malfunction:
-                if arglist.transfer:
-                    actions[mal_agent_prev] =trainers[mal_agent_new].action(cur_state[mal_agent_prev])
-                    actions[mal_agent_new] = np.zeros_like(actions[mal_agent_new])
+            for agent, obs in zip(trainers, cur_state):
+                if agent.agent_index == mal_agent_prev and mal_agent_prev != -1:
+                    actions.append(trainers[mal_agent_new].action(obs))
                 else:
-                    actions[mal_agent_prev] = np.zeros_like(actions[mal_agent_prev])
-            if mal_agent_prev == -1 and arglist.transfer:
+                    actions.append(agent.action(obs))
 
-                actions[arglist.mal_agent_new] = np.zeros_like(actions[mal_agent_new])
-
+            actions[mal_agent_new] = np.zeros_like(actions[0])
 
 
             # environment step
